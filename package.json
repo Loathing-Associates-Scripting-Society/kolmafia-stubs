@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/Loathing-Associates-Scripting-Society/kolmafia-stubs/issues"
   },
-  "homepage": "https://github.com/Loathing-Associates-Scripting-Society/kolmafia-stubs#readme"
+  "homepage": "https://github.com/Loathing-Associates-Scripting-Society/kolmafia-stubs#readme",
+  "engines": {
+    "node": ">=10"
+  }
 }
