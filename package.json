@@ -1,0 +1,24 @@
+{
+  "name": "kolmafia-stubs",
+  "version": "0.0.1",
+  "description": "Provides stubs for testing KoLmafia JS code in Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Loathing-Associates-Scripting-Society/kolmafia-stubs.git"
+  },
+  "keywords": [
+    "kolmafia",
+    "stub",
+    "testing"
+  ],
+  "author": "Ye-hyoung Kang",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Loathing-Associates-Scripting-Society/kolmafia-stubs/issues"
+  },
+  "homepage": "https://github.com/Loathing-Associates-Scripting-Society/kolmafia-stubs#readme"
+}
