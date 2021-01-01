@@ -12,6 +12,48 @@
  *    https://sourceforge.net/p/htmlcleaner/code/HEAD/tree/tags/htmlcleaner-2.24/src/main/java/org/htmlcleaner/TagNode.java
  */
 
+/**
+ * Interface that represents a DOM node.
+ * This is a subset of the W3C DOM Level 2 Node interface.
+ */
+export interface XPatherNode {
+  readonly nodeName: string;
+  readonly nodeType: number;
+  readonly parentNode: XPatherNode | null;
+  readonly childNodes: {
+    length: number;
+    item(index: number): XPatherNode;
+    [index: number]: XPatherNode;
+  };
+  textContent: string | null;
+
+  readonly ELEMENT_NODE: number;
+}
+
+/**
+ * Interface that represents a tag node.
+ * This is a subset of the W3C DOM Level 2 Element interface.
+ */
+export interface XPatherElement extends XPatherNode {
+  // Element attributes and methods
+  readonly attributes: {
+    readonly length: number;
+    item(index: number): XPatherAttr | null;
+    [index: number]: XPatherAttr;
+  };
+  getAttribute(qualifiedName: string): string | null;
+  hasAttribute(qualifiedName: string): boolean;
+}
+
+/**
+ * Interface that represents a tag attribute.
+ * This is a subset of the W3C DOM Level 2 Attr interface.
+ */
+export interface XPatherAttr extends XPatherNode {
+  readonly name: string;
+  value: string;
+}
+
 /*
   The implementation of TagNode and XPather are subject to the BSD-3 license:
 
@@ -51,13 +93,14 @@
   Please include the word "HtmlCleaner" in the subject line.
 */
 
-/// <reference lib="dom" />
-
 // ----------------------------------------------------------------------------
-// TagNode methods, converted to work with Element objects
+// TagNode methods, converted to work with TagNode objects
 // ----------------------------------------------------------------------------
 
-function getAllElementsList(el: Element, isRecursive: boolean): Element[] {
+function getAllElementsList(
+  el: XPatherElement,
+  isRecursive: boolean
+): XPatherElement[] {
   return findMatchingTagNodes(el, () => true, isRecursive);
 }
 
@@ -65,7 +108,10 @@ function getAllElementsList(el: Element, isRecursive: boolean): Element[] {
  * @param attName
  * @return Value of the specified attribute, or null if it this tag doesn't contain it.
  */
-function getAttributeByName(el: Element, attName: string): string | null {
+function getAttributeByName(
+  el: XPatherElement,
+  attName: string
+): string | null {
   return el.hasAttribute(attName) ? el.getAttribute(attName) : null;
 }
 
@@ -74,7 +120,7 @@ function getAttributeByName(el: Element, attName: string): string | null {
  *
  * @return Map instance containing all attribute name/value pairs.
  */
-function getAttributes(el: Element): {[attr: string]: string} {
+function getAttributes(el: XPatherElement): {[attr: string]: string} {
   const attributes: Record<string, string> = {};
   for (let i = 0; i < el.attributes.length; ++i) {
     const attr = el.attributes[i];
@@ -84,24 +130,24 @@ function getAttributes(el: Element): {[attr: string]: string} {
 }
 
 /**
- * @return Array of child Element objects.
+ * @return Array of child TagNode objects.
  */
-function getChildTagList(el: Element): Element[] {
-  const childTagList: Element[] = [];
+function getChildTagList<T extends XPatherElement>(el: T): T[] {
+  const childTagList: T[] = [];
   for (let i = 0; i < el.childNodes.length; ++i) {
     const item = el.childNodes[i];
-    if (isElementNode(item)) {
+    if (isElementNode<T>(item)) {
       childTagList.push(item);
     }
   }
   return childTagList;
 }
 
-function getElementListByName(
-  el: Element,
+function getElementListByName<T extends XPatherElement>(
+  el: T,
   findName: string,
   isRecursive: boolean
-): Element[] {
+): T[] {
   const lowerCaseName = findName.toLowerCase();
   return findMatchingTagNodes(
     el,
@@ -110,14 +156,14 @@ function getElementListByName(
   );
 }
 
-function getParent(el: Element): Element | null {
+function getParent<T extends XPatherElement>(el: T): T | null {
   const parent = el.parentNode;
   if (parent && parent.nodeType !== parent.ELEMENT_NODE) {
     throw new Error(
-      `Parent node is not an Element (nodeType: ${parent.nodeType})`
+      `Parent node is not an TagNode (nodeType: ${parent.nodeType})`
     );
   }
-  return parent as Element | null;
+  return parent as T | null;
 }
 
 /**
@@ -143,8 +189,11 @@ function getParent(el: Element): Element | null {
  * @return result of XPather evaluation.
  * @throws {XPatherException}
  */
-export function evaluateXPath(el: Element, xPathExpression: string) {
-  return new XPather(xPathExpression).evaluateAgainstNode(el);
+export function evaluateXPath<T extends XPatherElement>(
+  el: T,
+  xPathExpression: string
+): XPatherResult<T>[] {
+  return new XPather<T>(xPathExpression).evaluateAgainstNode(el);
 }
 
 /**
@@ -153,19 +202,19 @@ export function evaluateXPath(el: Element, xPathExpression: string) {
  * @param isRecursive
  * @return List of TagNode instances.
  */
-function findMatchingTagNodes(
-  el: Element,
-  condition: (e: Element) => unknown,
+function findMatchingTagNodes<T extends XPatherElement>(
+  el: T,
+  condition: (e: T) => unknown,
   isRecursive: boolean
-): Element[] {
-  const result: Element[] = [];
+): T[] {
+  const result: T[] = [];
   if (!condition) {
     return result;
   }
 
   for (let i = 0; i < el.childNodes.length; ++i) {
     const currNode = el.childNodes[i];
-    if (isElementNode(currNode)) {
+    if (isElementNode<T>(currNode)) {
       if (condition(currNode)) {
         result.push(currNode);
       }
@@ -189,7 +238,11 @@ function findMatchingTagNodes(
 // XPather class ported to TypeScript
 // ----------------------------------------------------------------------------
 
-export type XPathResultItem = boolean | number | string | Element;
+export type XPatherResult<T extends XPatherElement> =
+  | boolean
+  | number
+  | string
+  | T;
 
 export class XPatherException extends Error {
   constructor(message?: string) {
@@ -216,7 +269,7 @@ export class XPatherException extends Error {
  * </ul>
  * </code>
  */
-class XPather {
+class XPather<T extends XPatherElement> {
   /** array of basic tokens of which XPath expression is made */
   private tokenArray: string[] = [];
 
@@ -241,7 +294,7 @@ class XPather {
    * @param node
    * @throws {XPatherException}
    */
-  evaluateAgainstNode(node: Element): XPathResultItem[] {
+  evaluateAgainstNode(node: T): XPatherResult<T>[] {
     if (node === null) {
       throw new XPatherException(
         'Cannot evaluate XPath expression against null value!'
@@ -263,15 +316,15 @@ class XPather {
    * @throws {XPatherException}
    */
   protected evaluateAgainst(
-    obj: XPathResultItem[] | undefined,
+    obj: XPatherResult<T>[] | undefined,
     from: number,
     to: number,
     isRecursive: boolean,
     position: number,
     last: number,
     isFilterContext: boolean,
-    filterSource?: XPathResultItem[]
-  ): XPathResultItem[] {
+    filterSource?: XPatherResult<T>[]
+  ): XPatherResult<T>[] {
     if (from >= 0 && to < this.tokenArray.length && from <= to) {
       if ('' === this.tokenArray[from].trim()) {
         return this.evaluateAgainst(
@@ -287,7 +340,7 @@ class XPather {
       } else if (this.isToken('(', from)) {
         const closingBracket = this.findClosingIndex(from, to);
         if (closingBracket > 0) {
-          const value: XPathResultItem[] = this.evaluateAgainst(
+          const value = this.evaluateAgainst(
             obj,
             from + 1,
             closingBracket - 1,
@@ -511,15 +564,15 @@ class XPather {
    * @throws {XPatherException}
    */
   protected evaluateFunction(
-    source: XPathResultItem[],
+    source: XPatherResult<T>[],
     from: number,
     to: number,
     position: number,
     last: number,
     isFilterContext: boolean
-  ): XPathResultItem[] {
+  ): XPatherResult<T>[] {
     const name = this.tokenArray[from].trim();
-    const result: XPathResultItem[] = [];
+    const result: XPatherResult<T>[] = [];
 
     source.forEach((curr, index) => {
       index++;
@@ -576,12 +629,12 @@ class XPather {
    * @param to
    * @throws {XPatherException}
    */
-  protected filterByCondition<T extends XPathResultItem>(
-    source: T[],
+  protected filterByCondition(
+    source: XPatherResult<T>[],
     from: number,
     to: number
-  ): T[] {
-    const result: T[] = [];
+  ): XPatherResult<T>[] {
+    const result: XPatherResult<T>[] = [];
     source.forEach((curr, index) => {
       index++;
       const logicValueList = this.evaluateAgainst(
@@ -716,20 +769,20 @@ class XPather {
    * @throws {XPatherException}
    */
   private getElementsByName(
-    source: XPathResultItem[],
+    source: XPatherResult<T>[],
     from: number,
     to: number,
     isRecursive: boolean,
     isFilterContext: boolean
-  ): XPathResultItem[] {
+  ): XPatherResult<T>[] {
     let name = this.tokenArray[from].trim();
 
     if (isAtt(name)) {
       name = name.slice(1);
-      const result: XPathResultItem[] = [];
+      const result: XPatherResult<T>[] = [];
       let nodes;
       if (isRecursive) {
-        nodes = new Set<Element>();
+        nodes = new Set<T>();
         for (const next of source) {
           if (isElement(next)) {
             addAll(nodes, getAllElementsList(next, true));
@@ -775,7 +828,7 @@ class XPather {
       }
       return result;
     } else {
-      const resultSet = new Set<XPathResultItem>();
+      const resultSet = new Set<XPatherResult<T>>();
       let index = 0;
       for (const next of source) {
         if (isElement(next)) {
@@ -785,7 +838,7 @@ class XPather {
           const isParent = '..' === name;
           const isAll = '*' === name;
 
-          let subnodes: Element[] = [];
+          let subnodes: T[] = [];
           if (isSelf) {
             subnodes = [node];
           } else if (isParent) {
@@ -854,9 +907,9 @@ class XPather {
  * @param logicOperator
  * @return Result of logic operation
  */
-function evaluateLogic(
-  first: XPathResultItem[] | undefined,
-  second: XPathResultItem[],
+function evaluateLogic<T extends XPatherElement>(
+  first: XPatherResult<T>[] | undefined,
+  second: XPatherResult<T>[],
   logicOperator: string
 ): boolean {
   if (!first || first.length === 0 || !second || second.length === 0) {
@@ -967,7 +1020,7 @@ function throwStandardException(): never {
   throw new XPatherException();
 }
 
-function toText(o: XPathResultItem): string {
+function toText<T extends XPatherElement>(o: XPatherResult<T>): string {
   return isElement(o) ? o.textContent || '' : String(o);
 }
 
@@ -988,17 +1041,19 @@ function addAll<T>(target: Set<T>, source: T[]): void {
 }
 
 /**
- * Checks if the given value is an Element.
+ * Checks if the given XPathResultItem is an XPathElement.
  * @param value
  */
-export function isElement(value: XPathResultItem): value is Element {
+export function isElement<T extends XPatherElement>(
+  value: XPatherResult<T>
+): value is T {
   return Boolean(value) && typeof value === 'object';
 }
 
 /**
- * Checks if the given node is an Element node.
+ * Checks if the given XPathNode is an XPathElement.
  * @param node
  */
-function isElementNode(node: Node): node is Element {
+function isElementNode<T extends XPatherElement>(node: XPatherNode): node is T {
   return node.nodeType === node.ELEMENT_NODE;
 }
