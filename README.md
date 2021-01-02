@@ -1,5 +1,7 @@
 # kolmafia-stubs
 
+[![Build status: Test & Lint](https://github.com/Loathing-Associates-Scripting-Society/kolmafia-stubs/workflows/Test%20%26%20Lint/badge.svg)](https://github.com/Loathing-Associates-Scripting-Society/kolmafia-stubs/actions)
+
 kolmafia-stubs is a library for testing KoLmafia scripts in Node.js. It provides stubs for KoLmafia's library functions, which can be used to simulate KoLmafia's runtime environment.
 
 ## Installation
