@@ -19,7 +19,7 @@ kolmafia-stubs merely provides function stubs. To inject them into the current e
 Suppose your script uses the `xpath()` function:
 
 ```js
-// src/my-kolmafia-code.js`
+// src/my-kolmafia-code.js
 const {xpath} = require('kolmafia');
 
 const result = xpath(/* Do something */);
