@@ -1,6 +1,6 @@
 {
   "name": "kolmafia-stubs",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Provides stubs for testing KoLmafia JS code in Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
