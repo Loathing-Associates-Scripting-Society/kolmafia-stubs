@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated xmldom to 0.5.0 ([#3])
+
+[#3]: https://github.com/Loathing-Associates-Scripting-Society/kolmafia-stubs/pull/3
+
 ## [0.0.1] - 2021-01-02
 
 ### Added
