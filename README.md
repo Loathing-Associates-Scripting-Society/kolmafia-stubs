@@ -31,12 +31,12 @@ To test this code in Node.js, you can inject `xpath()` function into the global 
 
 ```js
 // test/my-kolmafia-code.test.js
-import mock from 'mock-require';
-import {xpath} from 'kolmafia-stubs';
+const mock = require('mock-require');
+const {xpath} = require('kolmafia-stubs');
 
 mock('kolmafia', {xpath});
 
-import {myFunc} from './src/my-kolmafia-code';
+const {myFunc} = require('./src/my-kolmafia-code');
 ```
 
 ## Provided functions
